@@ -45,9 +45,14 @@
     </section>
 
     <section class="view" id="recipeView" aria-labelledby="recipeTitle">
-      <header class="topbar"><div><p class="eyebrow">있는 재료로 가볍게</p><h2 id="recipeTitle">오늘의 레시피</h2></div></header>
-      <p class="recipe-note" id="recipeNote"></p>
-      <div class="recipe-list" id="recipeList"></div>
+      <header class="topbar"><div><p class="eyebrow">지금 있는 재료로 바로 찾아봐요</p><h2 id="recipeTitle">레시피 검색</h2></div></header>
+      <section class="recipe-search" aria-label="냉장고 재료로 실시간 레시피 검색">
+        <p>요리에 쓰고 싶은 재료를 골라주세요. 검색할 때마다 인터넷의 최신 결과를 새로 열어요.</p>
+        <div class="ingredient-checklist" id="ingredientChecklist"></div>
+        <button class="primary-button recipe-search-button" id="findRecipes" type="button">레시피 검색하기</button>
+      </section>
+      <p class="recipe-note" id="recipeNote" aria-live="polite"></p>
+      <div class="recipe-links" id="recipeLinks" aria-live="polite"></div>
     </section>
   </main>
 

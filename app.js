@@ -20,13 +20,6 @@ const SHELF_LIFE = [
   ['상추',5],['시금치',5],['깻잎',7],['오이',7],['애호박',7],['당근',21],['양파',30],['감자',30],['대파',10],['마늘',30],['브로콜리',7],['두부',5],['계란',21],['달걀',21],['우유',7],['요거트',14],['요구르트',14],['치즈',14],['김치',60],['돼지고기',3],['소고기',3],['닭고기',2],['생선',2],['고등어',2],['갈치',2],['연어',2],['어묵',7],['만두',5],['콩나물',3],['숙주',3],['버섯',7],['토마토',7],['사과',21],['딸기',4],['바나나',5],['햄',7],['소시지',7],['새우',2],['오징어',2],['생크림',5]
 ];
 const CATEGORY_DAYS = {'채소':7,'과일':10,'유제품':10,'육류/계란':3,'생선/해산물':3,'음료':14,'소스/양념':30,'밑반찬/기타':7};
-const RECIPES = [
-  ['김치볶음밥',['김치','밥','계란','대파']],['계란찜',['계란','대파']],['계란말이',['계란','당근','대파']],['된장찌개',['된장','두부','애호박','양파']],['김치찌개',['김치','돼지고기','두부','대파']],['두부조림',['두부','간장','대파','고추']],
-  ['감자조림',['감자','간장','양파']],['어묵볶음',['어묵','양파','당근','간장']],['소고기뭇국',['소고기','무','대파']],['닭볶음탕',['닭고기','감자','당근','양파']],['돼지고기 김치볶음',['돼지고기','김치','양파']],['제육볶음',['돼지고기','고추장','양파','대파']],
-  ['소불고기',['소고기','간장','양파','버섯']],['삼겹살 채소볶음',['삼겹살','양파','파프리카']],['고등어조림',['고등어','무','간장','대파']],['연어구이',['연어','버터','레몬']],['오징어볶음',['오징어','고추장','양파','대파']],['새우볶음밥',['새우','밥','계란','대파']],
-  ['애호박볶음',['애호박','양파','마늘']],['시금치나물',['시금치','마늘','참기름']],['오이무침',['오이','고추장','식초']],['콩나물무침',['콩나물','대파','참기름']],['버섯볶음',['버섯','양파','간장']],['감자전',['감자','양파']],
-  ['김치전',['김치','밀가루','대파']],['떡국',['떡','계란','대파']],['만둣국',['만두','계란','대파']],['비빔국수',['면','고추장','오이','김치']],['토마토 달걀볶음',['토마토','계란','대파']],['치즈 오믈렛',['계란','치즈','우유']],['두부김치',['두부','김치','돼지고기']],['감자 양파국',['감자','양파','대파']]
-].map(([name, ingredients]) => ({name, ingredients}));
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -99,7 +92,6 @@ async function renderAll() {
   const [fridge,freezer]=await Promise.all([getAll(STORES.fridge),getAll(STORES.freezer)]);
   $('#homeCount').textContent=`냉장고 ${fridge.length}개 · 냉동고 ${freezer.length}개`;
   renderShelves(currentLocation==='fridge'?fridge:freezer);
-  renderRecipes([...fridge,...freezer]);
 }
 function renderShelves(items) {
   const wrap=$('#shelfWrap'); wrap.replaceChildren();
@@ -107,15 +99,57 @@ function renderShelves(items) {
   const sorted=[...items].sort((a,b)=>(a.expiry||'9999').localeCompare(b.expiry||'9999'));
   for(let i=0;i<sorted.length;i+=6){const shelf=document.createElement('div');shelf.className='shelf';sorted.slice(i,i+6).forEach(item=>{const button=document.createElement('button');button.className='food-item';button.dataset.id=item.id;button.innerHTML=`<span class="food-icon">${iconSVG(item.category)}</span><span class="food-name">${escapeHTML(item.name)}</span><span class="food-expiry ${daysUntil(item.expiry)!==null&&daysUntil(item.expiry)<=3?'soon':''}">${expiryText(item)}</span>`;shelf.append(button)});wrap.append(shelf)}
 }
-function normalize(value){return value.toLowerCase().replace(/\s/g,'')}
-function hasIngredient(names, ingredient){const target=normalize(ingredient);return names.some(name=>normalize(name).includes(target)||target.includes(normalize(name)))}
-function renderRecipes(items){
-  const names=items.map(i=>i.name); const ranked=RECIPES.map(recipe=>{const have=recipe.ingredients.filter(i=>hasIngredient(names,i));const missing=recipe.ingredients.filter(i=>!hasIngredient(names,i));return {...recipe,have,missing,score:have.length/recipe.ingredients.length}}).sort((a,b)=>b.score-a.score||a.missing.length-b.missing.length||b.have.length-a.have.length);
-  $('#recipeNote').textContent=items.length?`${items.length}가지 식재료를 살펴보고 잘 맞는 순서로 골랐어요.`:'식재료를 담으면 만들기 좋은 요리를 찾아드려요.';
-  $('#recipeList').innerHTML=ranked.slice(0,18).map(r=>`<article class="recipe-card"><span class="match-badge">${r.have.length}/${r.ingredients.length}</span><h3>${r.name}</h3><p class="ingredient-line"><span class="ingredient-label">있는 재료</span><span class="have">${r.have.length?r.have.join(' · '):'아직 없음'}</span></p><p class="ingredient-line"><span class="ingredient-label">필요한 재료</span><span class="missing">${r.missing.length?r.missing.join(' · '):'모두 있어요'}</span></p></article>`).join('');
+async function refreshRecipeIngredients(){
+  const [fridge,freezer]=await Promise.all([getAll(STORES.fridge),getAll(STORES.freezer)]);
+  const names=[...new Set([...fridge,...freezer].map(item=>item.name.trim()).filter(Boolean))];
+  const checklist=$('#ingredientChecklist');
+  const links=$('#recipeLinks');
+  checklist.replaceChildren();
+  links.replaceChildren();
+  if(!names.length){
+    checklist.innerHTML='<div class="recipe-empty"><div class="search-doodle" aria-hidden="true"></div><p>먼저 식재료를 담아주세요</p><small>냉장고나 냉동고에 재료를 추가하면 여기에서 골라 검색할 수 있어요.</small></div>';
+    $('#recipeNote').textContent='냉장고와 냉동고가 아직 비어 있어요.';
+    $('#findRecipes').hidden=true;
+    return;
+  }
+  names.forEach((name,index)=>{
+    const label=document.createElement('label');
+    label.className='ingredient-option';
+    const input=document.createElement('input');
+    input.type='checkbox'; input.value=name; input.checked=true; input.id=`recipeIngredient${index}`;
+    const span=document.createElement('span'); span.textContent=name;
+    label.append(input,span); checklist.append(label);
+  });
+  $('#findRecipes').hidden=false;
+  $('#recipeNote').textContent=`냉장고·냉동고의 재료 ${names.length}가지를 모두 선택했어요.`;
+}
+function buildRecipeLinks(){
+  const selected=$$('#ingredientChecklist input:checked').map(input=>input.value);
+  const links=$('#recipeLinks');
+  links.replaceChildren();
+  if(!selected.length){
+    $('#recipeNote').textContent='검색할 재료를 하나 이상 골라주세요.';
+    return;
+  }
+  const heading=document.createElement('p');
+  heading.className='search-ready';
+  heading.textContent=`${selected.join(' · ')} 레시피를 어디에서 찾을까요?`;
+  const actions=document.createElement('div'); actions.className='search-link-actions';
+  const recipeLink=document.createElement('a');
+  recipeLink.className='search-link recipe-site';
+  recipeLink.href=`https://www.10000recipe.com/recipe/list.html?q=${encodeURIComponent(selected[0])}`;
+  recipeLink.target='_blank'; recipeLink.rel='noopener noreferrer';
+  recipeLink.textContent=`만개의레시피에서 ${selected[0]} 찾기`;
+  const naverLink=document.createElement('a');
+  naverLink.className='search-link web-search';
+  naverLink.href=`https://search.naver.com/search.naver?query=${encodeURIComponent(`${selected.join(' ')} 레시피`)}`;
+  naverLink.target='_blank'; naverLink.rel='noopener noreferrer';
+  naverLink.textContent='네이버에서 선택 재료 모두 찾기';
+  actions.append(recipeLink,naverLink); links.append(heading,actions);
+  $('#recipeNote').textContent='아래 검색처를 누르면 새 창에서 최신 결과를 열어요.';
 }
 function escapeHTML(value){const span=document.createElement('span');span.textContent=value;return span.innerHTML}
-function showView(name){$$('.view').forEach(v=>v.classList.remove('active'));$(`#${name}View`).classList.add('active');$$('.nav-button').forEach(b=>b.classList.toggle('active',b.dataset.view===name));window.scrollTo(0,0)}
+function showView(name){$$('.view').forEach(v=>v.classList.remove('active'));$(`#${name}View`).classList.add('active');$$('.nav-button').forEach(b=>b.classList.toggle('active',b.dataset.view===name));if(name==='recipe')refreshRecipeIngredients();window.scrollTo(0,0)}
 function showModal(id){const el=$(`#${id}`);el.hidden=false;document.body.style.overflow='hidden'}
 function closeModal(id){$(`#${id}`).hidden=true;if(!$$('.backdrop:not([hidden])').length)document.body.style.overflow=''}
 function toast(message){const el=$('#toast');el.textContent=message;el.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove('show'),1800)}
@@ -135,6 +169,7 @@ async function init(){
   await renderAll(); scheduleBackup();
   $$('.nav-button').forEach(button=>button.addEventListener('click',()=>showView(button.dataset.view)));
   $('#openFridge').addEventListener('click',()=>showView('inside'));
+  $('#findRecipes').addEventListener('click',buildRecipeLinks);
   $$('.location-tab').forEach(button=>button.addEventListener('click',async()=>{currentLocation=button.dataset.location;$$('.location-tab').forEach(b=>b.classList.toggle('active',b===button));renderShelves(await getAll(STORES[currentLocation]))}));
   $('#addButton').addEventListener('click',openAdd);
   $('#shelfWrap').addEventListener('click',e=>{const item=e.target.closest('.food-item');if(item)openDetail(item.dataset.id)});

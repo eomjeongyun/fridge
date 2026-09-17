@@ -1,14 +1,14 @@
-const CACHE = 'fridge-v1';
+const CACHE_NAME = 'fridge-v3';
 const SHELL = ['./', './index.html', './styles.css', './app.js', './manifest.webmanifest', './fonts/GangwonEduSaeeum.woff2', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim()));
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))).then(() => self.clients.claim()));
 });
 async function cachedFirst(request, fallback) {
-  const cache = await caches.open(CACHE);
+  const cache = await caches.open(CACHE_NAME);
   const cacheKey = fallback || request;
   const cached = await cache.match(cacheKey);
   const refresh = fetch(request).then(response => {

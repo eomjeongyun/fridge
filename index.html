@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f7e9a9">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Fridge">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./styles.css">
+  <title>Fridge</title>
+</head>
+<body>
+  <main id="app">
+    <section class="view active" id="homeView" aria-labelledby="homeTitle">
+      <header class="home-head"><p class="eyebrow">우리 집 작은 식재료 노트</p><h1 id="homeTitle">Fridge</h1></header>
+      <button class="big-fridge" id="openFridge" aria-label="냉장고 열기">
+        <svg viewBox="0 0 230 330" role="img" aria-label="손그림 냉장고">
+          <defs><filter id="rough"><feTurbulence baseFrequency=".025" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.7"/></filter><pattern id="dots" width="12" height="12" patternUnits="userSpaceOnUse"><circle cx="2" cy="3" r="1.1" fill="#fff" opacity=".32"/></pattern></defs>
+          <g filter="url(#rough)" stroke="#9b6352" stroke-width="5" stroke-linejoin="round">
+            <path d="M43 18 Q112 10 188 19 L194 106 Q115 112 39 105 Z" fill="#f3c765"/>
+            <path d="M39 114 Q114 106 194 113 L188 304 Q112 316 43 303 Z" fill="#ee806f"/>
+            <path d="M39 114 Q114 106 194 113 L188 304 Q112 316 43 303 Z" fill="url(#dots)" stroke="none"/>
+            <path d="M165 40 Q171 62 166 86" fill="none" stroke="#875849" stroke-width="7" stroke-linecap="round"/>
+            <path d="M165 140 Q171 174 164 206" fill="none" stroke="#875849" stroke-width="7" stroke-linecap="round"/>
+            <path d="M59 305 l-2 12 M174 307 l2 10" fill="none" stroke-linecap="round"/>
+          </g>
+          <path d="M18 319 Q116 310 213 320" fill="none" stroke="#b8b078" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 7"/>
+        </svg>
+      </button>
+      <p class="tap-hint">문을 톡 눌러 열어보세요</p>
+      <p class="count-card" id="homeCount">냉장고 0개 · 냉동고 0개</p>
+    </section>
+
+    <section class="view" id="insideView" aria-labelledby="insideTitle">
+      <header class="topbar"><div><p class="eyebrow">오늘 우리 집에는</p><h2 id="insideTitle">냉장고 안</h2></div></header>
+      <div class="location-tabs" role="tablist">
+        <button class="location-tab active" data-location="fridge" role="tab">냉장고</button>
+        <button class="location-tab" data-location="freezer" role="tab">냉동고</button>
+      </div>
+      <div class="shelf-wrap" id="shelfWrap"></div>
+      <button class="add-button" id="addButton" aria-label="새 식재료 추가">+</button>
+    </section>
+
+    <section class="view" id="recipeView" aria-labelledby="recipeTitle">
+      <header class="topbar"><div><p class="eyebrow">있는 재료로 가볍게</p><h2 id="recipeTitle">오늘의 레시피</h2></div></header>
+      <p class="recipe-note" id="recipeNote"></p>
+      <div class="recipe-list" id="recipeList"></div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="주 메뉴">
+    <button class="nav-button active" data-view="home"><span class="nav-doodle house"></span>홈</button>
+    <button class="nav-button" data-view="inside"><span class="nav-doodle fridge-mini"></span>냉장고 안</button>
+    <button class="nav-button" data-view="recipe"><span class="nav-doodle bowl"></span>레시피</button>
+  </nav>
+
+  <div class="backdrop" id="itemBackdrop" hidden>
+    <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="itemSheetTitle">
+      <div class="sheet-handle"></div>
+      <div class="sheet-heading"><h2 id="itemSheetTitle">식재료 담기</h2><button class="icon-close" type="button" data-close="itemBackdrop" aria-label="닫기">×</button></div>
+      <form id="itemForm">
+        <input type="hidden" id="itemId">
+        <label>제품명 <span class="required">필수</span><input id="itemName" type="text" required maxlength="40" placeholder="예: 두부, 사과, 우유" autocomplete="off"></label>
+        <div class="form-grid"><label>구매일<input id="purchasedAt" type="date"></label><label>유통기한<input id="expiry" type="date"></label></div>
+        <p class="estimate-hint" id="estimateHint">구매일을 적으면 먹기 좋은 날을 알려드려요.</p>
+        <fieldset><legend>남은 정도</legend><div class="segmented amount-options"><label><input type="radio" name="amount" value="많이"><span>많이</span></label><label><input type="radio" name="amount" value="보통" checked><span>보통</span></label><label><input type="radio" name="amount" value="적음"><span>적음</span></label></div></fieldset>
+        <fieldset><legend>보관할 곳</legend><div class="segmented location-options"><label><input type="radio" name="location" value="fridge" checked><span>냉장고</span></label><label><input type="radio" name="location" value="freezer"><span>냉동고</span></label></div></fieldset>
+        <button class="primary-button" type="submit">저장하기</button>
+      </form>
+    </section>
+  </div>
+
+  <div class="backdrop" id="detailBackdrop" hidden>
+    <section class="sheet detail-sheet" role="dialog" aria-modal="true" aria-labelledby="detailName">
+      <div class="sheet-handle"></div><button class="icon-close detail-close" type="button" data-close="detailBackdrop" aria-label="닫기">×</button>
+      <div id="detailContent"></div>
+      <div class="detail-actions"><button class="secondary-button" id="editItem">수정</button><button class="danger-button" id="deleteItem">삭제</button></div>
+    </section>
+  </div>
+
+  <div class="backdrop" id="confirmBackdrop" hidden>
+    <section class="sheet confirm-sheet" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
+      <div class="sheet-handle"></div><h2 id="confirmTitle">이 식재료를 지울까요?</h2><p>지운 식재료는 다시 되돌릴 수 없어요.</p>
+      <div class="confirm-actions"><button class="secondary-button" data-close="confirmBackdrop">취소</button><button class="danger-button solid" id="confirmDelete">지우기</button></div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="./app.js" defer></script>
+</body>
+</html>

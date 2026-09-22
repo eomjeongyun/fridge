@@ -72,6 +72,7 @@ function addDays(dateString, days) {
 function friendlyDate(value) { if(!value) return '기록 안 함'; const [,m,d]=value.split('-'); return `${Number(m)}월 ${Number(d)}일`; }
 function daysUntil(value) { if(!value) return null; const today=new Date(); today.setHours(0,0,0,0); return Math.ceil((new Date(`${value}T00:00:00`)-today)/86400000); }
 function expiryText(item) { const d=daysUntil(item.expiry); if(d===null)return '기한 없음'; if(d<0)return `${Math.abs(d)}일 지남`; if(d===0)return '오늘까지'; return `${d}일 남음`; }
+function dDayLabel(d) { if(d===null)return ''; if(d<0)return `D+${Math.abs(d)}`; if(d===0)return 'D-DAY'; return `D-${d}`; }
 
 function iconSVG(category) {
   const common='viewBox="0 0 80 80" aria-hidden="true"';
@@ -97,7 +98,7 @@ function renderShelves(items) {
   const wrap=$('#shelfWrap'); wrap.replaceChildren();
   if(!items.length){wrap.innerHTML='<div class="empty-state"><div class="empty-jar"></div><p>아직 놓인 식재료가 없어요</p><small>아래의 + 버튼으로 하나씩 담아보세요.</small></div>';return;}
   const sorted=[...items].sort((a,b)=>(a.expiry||'9999').localeCompare(b.expiry||'9999'));
-  for(let i=0;i<sorted.length;i+=6){const shelf=document.createElement('div');shelf.className='shelf';sorted.slice(i,i+6).forEach(item=>{const button=document.createElement('button');button.className='food-item';button.dataset.id=item.id;button.innerHTML=`<span class="food-icon">${iconSVG(item.category)}</span><span class="food-name">${escapeHTML(item.name)}</span><span class="food-expiry ${daysUntil(item.expiry)!==null&&daysUntil(item.expiry)<=3?'soon':''}">${expiryText(item)}</span>`;shelf.append(button)});wrap.append(shelf)}
+  for(let i=0;i<sorted.length;i+=6){const shelf=document.createElement('div');shelf.className='shelf';sorted.slice(i,i+6).forEach(item=>{const button=document.createElement('button');button.className='food-item';button.dataset.id=item.id;const d=daysUntil(item.expiry);const badgeClass=d===null?'':d<0?'over':d<=3?'soon':'';const badge=d===null?'':`<span class="dday-badge ${badgeClass}">${dDayLabel(d)}</span>`;button.innerHTML=`<span class="food-icon-wrap"><span class="food-icon">${iconSVG(item.category)}</span>${badge}</span><span class="food-name">${escapeHTML(item.name)}</span><span class="food-expiry ${d!==null&&d<=3?'soon':''}">${expiryText(item)}</span>`;shelf.append(button)});wrap.append(shelf)}
 }
 async function refreshRecipeIngredients(){
   const [fridge,freezer]=await Promise.all([getAll(STORES.fridge),getAll(STORES.freezer)]);

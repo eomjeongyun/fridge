@@ -161,13 +161,10 @@ async function openDetail(id){const store=STORES[currentLocation];const items=aw
 
 async function saveForm(event){event.preventDefault();const name=$('#itemName').value.trim();if(!name)return;const purchasedAt=$('#purchasedAt').value;const enteredExpiry=$('#expiry').value;const category=categoryFor(name);const expiry=enteredExpiry||(purchasedAt?addDays(purchasedAt,shelfDays(name,category)):'');const now=new Date().toISOString();const location=$('input[name="location"]:checked').value;const id=$('#itemId').value;const item={id:id||(crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random().toString(16).slice(2)}`),name,category,location,purchasedAt,expiry,expiryIsEstimated:!enteredExpiry&&Boolean(expiry),amount:$('input[name="amount"]:checked').value,createdAt:selectedItem?.createdAt||now,updatedAt:now};await putItem(item,selectedStore);currentLocation=location;$$('.location-tab').forEach(b=>b.classList.toggle('active',b.dataset.location===location));closeModal('itemBackdrop');await renderAll();toast(id?'수정했어요.':'냉장고에 담았어요.')}
 
-async function exportDB(){const [fridgeItems,freezerItems]=await Promise.all([getAll('fridgeItems'),getAll('freezerItems')]);return {app:'fridge',exportedAt:new Date().toISOString(),fridgeItems,freezerItems}}
-function scheduleBackup(){setTimeout(async()=>{const today=new Date().toLocaleDateString('sv-SE');if(localStorage.getItem('fridgeBackupDate')===today)return;try{const exportedData=await exportDB();const res=await fetch('https://appointee-unnoticed-donated.ngrok-free.dev/api/app-backup/fridge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(exportedData)});if(res.ok)localStorage.setItem('fridgeBackupDate',today)}catch{}},4000)}
-
 async function init(){
   db=await openDB();
   if(navigator.storage?.persist)navigator.storage.persist().catch(()=>{});
-  await renderAll(); scheduleBackup();
+  await renderAll();
   $$('.nav-button').forEach(button=>button.addEventListener('click',()=>showView(button.dataset.view)));
   $('#openFridge').addEventListener('click',()=>showView('inside'));
   $('#findRecipes').addEventListener('click',buildRecipeLinks);
